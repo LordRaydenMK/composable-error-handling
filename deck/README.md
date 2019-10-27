@@ -631,6 +631,14 @@ User.create(
 // Invalid(e=NonEmptyList(all=[Date of Birth must be a valid date, found: '10.10.1992', Email must contain @, found: '', Name must be between 1 and 50 chars, found: '   ']))
 ```
 
+>--
+
+## Learn more
+
+arrow-kt.io
+
+Patterns -> Error Handling
+
 ---
 
 ## Composition
@@ -667,13 +675,14 @@ fun validateEmail(email: String?): ValidationResult<Email> = TODO()
 
 ```kotlin
 
-// (String?, String?, String?, String) -> ValidationResult<User>
+// (String?, String?, String?, String?) -> ValidationResult<User>
 fun validateUser(
     email: String?,
     firstName: String?,
     lastName: String?,
     dob: String?): ValidationResult<User> = TODO()
 ```
+<!-- .element: class="fragment" data-fragment-index="1" -->
 
 ---
 
