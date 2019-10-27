@@ -520,6 +520,8 @@ fun <E, A, B, C> tupled(
 
 ## Arrow-kt
 
+<img src="images/arrow.svg" alt="arrow logo">
+
 Functional companion to Kotlin's Standard Library
 
 arrow-kt.io
