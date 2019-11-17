@@ -1,6 +1,10 @@
 # Composable Error Handling
 
-Slides for an internal lightning talk at [N26](https://www.n26.com).
+Slides for a tech talk given at:
+
+- Internal Tech Talk at [N26](https://www.n26.com)
+- [Kotlin user group](https://www.meetup.com/kotlin-berlin/events/tvhffpyzpbcc/) meetup in Berlin
+- [Talk26 meetup](https://www.meetup.com/N26-Tech-Product-Design-Events-in-Vienna/events/266381954/) in Vienna
 
 [Deck Markdown source](/src/main/ank/README.md).
 
