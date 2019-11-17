@@ -48,7 +48,7 @@ We have a Sign Up form with:
 ## Validation rules
 
 - Email must contain @
-- First Name and Last Name can't be blank. Max length 50.
+- First Name and Last Name can't be blank. Max length 50 (DB limit).
 - Date of Birth must be formatted as YYYY-MM-DD
 
 >--
@@ -295,7 +295,7 @@ fun validateUserAccumulateErrors(
     lastName: String?,
     dob: String?
 ): Unit {
-    val errors = mutableSetOf<String>()
+    val errors = mutableListOf<String>()
 
     try {
         validateEmailUnit(email)
@@ -346,7 +346,7 @@ fun validateName(name: String?): ErrorMsg? =
     if (!name.isNullOrBlank() && name.length < 50) null
     else "Name must be between 1 and 50 chars, found: '$name'"
 
-fun validateDateOfBirth(dob: String): ErrorMsg? = TODO()
+fun validateDateOfBirth(dob: String?): ErrorMsg? = TODO()
 ```
 <!-- .element: class="fragment" data-fragment-index="2" -->
 
@@ -374,7 +374,7 @@ fun validateUser(
 
 >--
 
-## ErrorRes
+## ErrorMsg
 
 - Composable
 - Good error messages
@@ -410,7 +410,7 @@ validateEmail already does a null check
 
 ---
 
-## ValidationResult
+## ValRes
 
 ```kotlin
 
@@ -430,7 +430,7 @@ fun <E> invalid(e: E): ValRes<E, Nothing> = ValRes.Invalid(e)
 
 >--
 
-## ValidationResult in the small
+## ValRes in the small
 
 ```kotlin
 
@@ -451,7 +451,7 @@ fun validateName(name: String?): ValRes<String, String50> =
 
 fun validateDateOfBirth(dob: String?): ValRes<String, LocalDate> = TODO()
 ```
-<!-- .element: class="fragment" data-fragment-index="1" -->
+<!-- .element: class="fragment" data-fragment-index="2" -->
 
 >--
 
@@ -495,12 +495,12 @@ validateEmail("email")
 
 tupled(
     {e1, e2 -> "$e1, $e2"},
-    validateEmail("stojan"),
-    validateName(null)
+    validateEmail("stojan"),    //invalid
+    validateName(null)          //invalid
 )
 // Invalid(e=Email must contain @, found: 'stojan', Name must be between 1 and 50 chars, found: 'null')
 ```
-<!-- .element: class="fragment" data-fragment-index="1" -->
+<!-- .element: class="fragment" data-fragment-index="2" -->
 
 >--
 
@@ -509,7 +509,7 @@ tupled(
 data class Triple<A, B, C>(val a: A, val b: B, val c: C)
 
 fun <E, A, B, C> tupled(
-            combine: (E, E, E) -> E,
+            combine: (E, E) -> E,
             a: ValRes<E, A>,
             b: ValRes<E, B>,
             c: ValRes<E, C>
@@ -562,6 +562,7 @@ fun Email.Companion.create(email: String?): ValidationResult<Email> =
     if (email != null && email.contains('@')) Email(email).valid()
     else "Email must contain @, found: '$email'".invalidNel()
 ```
+<!-- .element: class="fragment" data-fragment-index="1" -->
 
 >--
 
@@ -582,6 +583,64 @@ fun validateDateOfBirth(dob: String?): ValidationResult<LocalDate> =
     }
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
+
+>--
+
+```kotlin
+
+import arrow.core.extensions.nonemptylist.semigroup.semigroup
+import arrow.core.extensions.validated.applicative.applicative
+
+fun validateNameAndEmail(
+    email: String?,
+    firstName: String?
+): ValidationResult<Tuple2<Email, String50>> =
+    ValidationResult.applicative(Nel.semigroup<String>())
+        .tupled(
+            Email.create(email),
+            String50.create(firstName)
+        ).fix()
+```
+
+>--
+
+## Applicative
+
+Combine values from multiple independent computations.
+
+`tupled` 2-X arguments returns `Tuple2-TupleX`
+
+>--
+
+## Semigroup
+
+A semigroup for some given type A has a single operation (which we will call combine), which takes two values of type A, and returns a value of type A. This operation must be guaranteed to be associative.
+
+```kotlin
+
+interface Semigroup<A> {
+
+    fun combine(a: A, b: A): A
+}
+```
+
+Note: If we have two Nel, we can combine them by adding the items.
+
+>--
+
+## Validating name and email
+
+```kotlin
+
+validateNameAndEmail("stolea@gmail.com", "Stojan")
+// Valid(a=Tuple2(a=Email(email=stolea@gmail.com), b=String50(value=Stojan)))
+```
+
+```kotlin
+
+validateNameAndEmail("Not an email", "     ")
+// Invalid(e=NonEmptyList(all=[Email must contain @, found: 'Not an email', Name must be between 1 and 50 chars, found: '     ']))
+```
 
 >--
 
