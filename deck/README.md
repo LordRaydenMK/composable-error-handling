@@ -606,6 +606,8 @@ Note: In the examples I will just collect error messages as strings. In practice
 
 >--
 
+## Validating in the small
+
 ```kotlin
 
 fun String50.Companion.create(name: String?): ValidationResult<String50> =
@@ -720,6 +722,8 @@ Note: Validating a user. We get a Tuple4 and use map to convert it to a User. Ma
 
 >--
 
+## Create user (valid)
+
 ```kotlin
 
 User.create(
@@ -734,6 +738,8 @@ User.create(
 Note: Successful validation, we get a valid user in case of success
 
 >--
+
+## Create user (invalid)
 
 ```kotlin
 
