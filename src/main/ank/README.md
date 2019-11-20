@@ -12,6 +12,8 @@
 
 @s_anastasov
 
+Note: Alternative title. Composition is the benefit, functional programming is how we get there
+
 ---
 
 ## Solving problems
@@ -32,16 +34,20 @@ As developers we solve complex problems.
 - Write code solving the small problems <!-- .element: class="fragment" data-fragment-index="2" -->
 - Combine the solutions of the small problems <!-- .element: class="fragment" data-fragment-index="3" -->
 
+Note: It it very important to write as little glue code as possible when combining the solutions of the small problems
+
 ---
 
 ## Data Validation
 
-We have a Sign Up form with:
+The problem of user sign up with data:
 
 - Email
 - First Name
 - Last Name
 - Date of Birth
+
+Note: We need to validate: the form on Web/Mobile, on BE we validate the data coming from the client
 
 >--
 
@@ -50,6 +56,8 @@ We have a Sign Up form with:
 - Email must contain @
 - First Name and Last Name can't be blank. Max length 50 (DB limit).
 - Date of Birth must be formatted as YYYY-MM-DD
+
+Note: The best way to validate email is by sending a confirmation link to the user
 
 >--
 
@@ -66,6 +74,8 @@ data class UserDto(
 
 *Postel's law*: Be conservative in what you do, be liberal in what you accept from others.
 <!-- .element: class="fragment" data-fragment-index="1" -->
+
+Note: Everything is nullable. On FE the fields can be empty. On BE the client might receive an invalid JSON.
 
 >--
 
@@ -93,7 +103,7 @@ data class User(
 ```
 <!-- .element: class="fragment" data-fragment-index="3" -->
 
-Note: We can easily combine 4 fields into a data class
+Note: We can easily combine 4 fields into a data class. We validate the data once, at the edge of the system, and in the domain layer we can assume we have valid data.
 
 ---
 
@@ -106,7 +116,7 @@ fun validateEmail(email: String?): Boolean =
     email != null && email.contains('@')
 ```
 
-Note: Sub-problem 1
+Note: Sub-problem #1
 
 >--
 
@@ -119,7 +129,7 @@ fun validateName(name: String?): Boolean =
     !name.isNullOrBlank() && name.length < 50
 ```
 
-Note: Sub-problem 2
+Note: Sub-problem #2
 
 >--
 
@@ -140,7 +150,7 @@ fun validateDateOfBirth(dob: String?): Boolean =
     }
 ```
 
-Note: Sub-problem 3
+Note: Sub-problem #3
 
 >--
 
@@ -161,7 +171,7 @@ fun validateUser(
         && validateDateOfBirth(dob)
 ```
 
-Note: Combining the solutions
+Note: Combining the solutions of the sub-problems. We use an operator provided by the language to combine the results of the smaller functions
 
 >--
 
@@ -171,8 +181,10 @@ Note: Combining the solutions
 validateUser("stojan", null, "", "August")
 ```
 
-<img src="http://www.icge.co.uk/languagesciencesblog/wp-content/uploads/2014/04/you_shall_not_pass1.jpg" alt="You shall not pass" />
+<img src="images/you_shall_not_pass.jpg" alt="You shall not pass" />
 <!-- .element: class="fragment" data-fragment-index="1" -->
+
+Note: Because we get a Boolean, the only thing we can say to the user is NO. Ideally we want to hep the user fix the problem.
 
 >--
 
@@ -183,6 +195,8 @@ validateUser("stojan", null, "", "August")
 - Bad error messages
 
 Boolean -> True | False
+
+Note: Because we only get a Boolean, we don't have any info about the problem. We could call the validation functions again, to see what the problem is, but that makes the code more complex.
 
 ---
 
@@ -197,21 +211,14 @@ fun validateEmailBool(email: String?): Boolean {
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
-```kotlin:ank
-fun validateName(name: String?): Boolean {
-    require(!name.isNullOrBlank() && name.length < 50)
-    { "Name must be between 1 and 50 chars, found: '$name'" }
-    return true
-}
-```
-<!-- .element: class="fragment" data-fragment-index="2" -->
-
 IllegalArgumentException if the predicate is false
-<!-- .element: class="fragment" data-fragment-index="3" -->
+<!-- .element: class="fragment" data-fragment-index="1" -->
+
+Note: Exceptions have a message that we can use to display what the problem was.
 
 >--
 
-## Return type is always true
+## Return value is always true
 
 ```kotlin:ank
 fun validateEmailUnit(email: String?): Unit =
@@ -226,6 +233,8 @@ fun validateDateOfBirthUnit(dob: String?): Unit {
     LocalDate.parse(dob)
 }
 ```
+
+Note: Since the value is always true, we can return Unit instead
 
 >--
 
@@ -244,6 +253,8 @@ fun validateUserUnit(
     validateDateOfBirthUnit(dob)
 }
 ```
+
+Note: We can try to compose it by calling all four functions one by one
 
 >--
 
@@ -265,6 +276,8 @@ result
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
 We only get the first error! <!-- .element: class="fragment" data-fragment-index="1" -->
+
+Note: It works well in the happy path, but if there is an error we only get the first one. Best UX is if we get all errors.
 
 >--
 
@@ -294,6 +307,8 @@ fun validateUserAccumulateErrors(
 ```
 
 Glue code to the MAX!
+
+Note: This doesn't scale very well, it's a lot of repeatable code and it's error prone.
 
 >--
 
@@ -329,6 +344,8 @@ fun validateDateOfBirth(dob: String?): ErrorMsg? = TODO()
 ```
 <!-- .element: class="fragment" data-fragment-index="2" -->
 
+Note: ErrorMsg is just a convenient typealias for readability. When ErrorMsg is null, the data is valid. Otherwise we return the error message.
+
 >--
 
 ## Composing values
@@ -350,6 +367,8 @@ fun validateUser(
 }
 ```
 
+Note: listOfNotNull will filter out the null values (the valid data) keeping only the errors. The code for composing the sub-problems is not too bad.
+
 >--
 
 ## ErrorMsg
@@ -358,6 +377,8 @@ fun validateUser(
 - Good error messages
 
 - Developer friendly ?
+
+Note: This composes well (little glue code), has proper error messages. Is it developer friendly? Let's see the usage.
 
 >--
 
@@ -373,17 +394,23 @@ fun validateUser(
 
 validateEmail already does a null check
 
+Note: We don't want to duplicate the null check that validateEmail already does. It kind of feels like writing Java.
+
 >--
 
 ## Smart cast
 
-<img src="https://i.stack.imgur.com/kLE8Y.png" alt="Kotlin smart cast">
+<img src="images/smart_cast.png" alt="Kotlin smart cast">
+
+Note: In Kotlin, when we do a type check, the compiler does the casting for us. Unlike Java where we have to do it manually (error prone)
 
 >--
 
 ## Can we do better
 
-<img src="https://aaronsoundguy.files.wordpress.com/2014/01/famous-characters-troll-face-challenge-accepted-256559.jpg" alt="Challenge accepted" width=400px>
+<img src="images/challenge-accepted.jpg" alt="Challenge accepted" width=400px>
+
+Note: Can we have our cake and eat it too. Let's try a different approach.
 
 ---
 
@@ -402,6 +429,8 @@ fun <A> valid(a: A): ValRes<Nothing, A> = ValRes.Valid(a)
 fun <E> invalid(e: E): ValRes<E, Nothing> = ValRes.Invalid(e)
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
+
+Note: Always return a value. With ValRes we return the error in case of failure and the converted valid value in case of success.
 
 >--
 
@@ -425,6 +454,8 @@ fun validateDateOfBirth(dob: String?): ValRes<String, LocalDate> = TODO()
 ```
 <!-- .element: class="fragment" data-fragment-index="2" -->
 
+Note: The validation function for a single value looks similar
+
 >--
 
 ## Combining ValRes
@@ -444,6 +475,8 @@ fun <E, A, B> tupled(
             else if (b is Invalid) invalid(b.e)
             else throw IllegalStateException("This is impossible")
 ```
+
+Note: Composing two ValRes values. We need the two values and a function that composes the errors. In case of success we return a pair. If there are two errors we combine them. If there is one error we return that error
 
 >--
 
@@ -467,6 +500,8 @@ tupled(
 ```
 <!-- .element: class="fragment" data-fragment-index="2" -->
 
+Note: Usage for valid, invalid and multiple failures
+
 >--
 
 ```kotlin:ank
@@ -480,6 +515,8 @@ fun <E, A, B, C> tupled(
         ): ValRes<E, Triple<A, B, C>> = TODO()
 ```
 
+Note: If we want to combine three values, we can do it with this function. The bad news is we have to write this for different number of values. The good news it's generic and works for any type. Meaning we can write it as a library.
+
 ---
 
 ## Arrow-kt
@@ -489,6 +526,8 @@ fun <E, A, B, C> tupled(
 Functional companion to Kotlin's Standard Library
 
 arrow-kt.io
+
+Note: That library already exists, it's called Arrow.
 
 >--
 
@@ -508,7 +547,7 @@ typealias ValidatedNel<E, A> = Validated<Nel<E>, A>
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
-Note: Nel is short for NonEmptyList
+Note: Arrow comes with a validation datatype called Validated<E, A>. Usually errors are collected in a List. Nel is short for NonEmptyList. You can get a valid value or a list with a minimum of one error.
 
 >--
 
@@ -524,6 +563,8 @@ fun Email.Companion.create(email: String?): ValidationResult<Email> =
     else "Email must contain @, found: '$email'".invalidNel()
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
+
+Note: In the examples I will just collect error messages as strings. In practice you might define a sealed class with different errors.
 
 >--
 
@@ -543,6 +584,8 @@ fun validateDateOfBirth(dob: String?): ValidationResult<LocalDate> =
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
+Note: The validation functions are similar to what we saw before. Arrow comes with valid and invalidNel extension functions to create Valid/Invalid type. The create functions are defined on the companion object
+
 >--
 
 ```kotlin:ank
@@ -555,18 +598,22 @@ fun validateNameAndEmail(
 ): ValidationResult<Tuple2<Email, String50>> =
     ValidationResult.applicative(Nel.semigroup<String>())
         .tupled(
-            Email.create(email),
-            String50.create(firstName)
+            Email.create(email),       // ValidationResult<Email>
+            String50.create(firstName) // ValidationResult<String50>
         ).fix()
 ```
+
+Note: Combining two values with ValidationResult. tupled combines two values that can potentially fail. Returns Invalid in case of failure or Valid if both succeed. Typle2 is just like Pair in Kotlin.
 
 >--
 
 ## Applicative
 
-Combine values from multiple independent computations.
+Combine values from multiple independent computations that can potentially fail.
 
 `tupled` 2-X arguments returns `Tuple2-TupleX`
+
+Note: the function tupled is defined starting with 2 arguments up until X. Depending on the number of argument it will return Tuple2-X in case of success. In case of failure it return Invalid, for our example ValidationResult.Invalid
 
 >--
 
@@ -581,7 +628,7 @@ interface Semigroup<A> {
 }
 ```
 
-Note: If we have two Nel, we can combine them by adding the items.
+Note: If we have two Nel, we can combine them by adding the items. This is similar to the combine function we saw for ValRes.
 
 >--
 
@@ -594,6 +641,10 @@ validateNameAndEmail("stolea@gmail.com", "Stojan")
 ```kotlin:ank
 validateNameAndEmail("Not an email", "     ")
 ```
+
+<!-- .element: class="fragment" data-fragment-index="1" -->
+
+Note: Usage example with valid and invalid data. We get all error messages.
 
 >--
 
@@ -614,9 +665,11 @@ fun User.Companion.create(
             String50.create(lastName),
             validateDateOfBirth(dob)
         )
-        .fix()
+        .fix()  // Tuple4<Email, String50, String50, LocalDate>
         .map { User(it.a, it.b, it.c, it.d) }
 ```
+
+Note: Validating a user. We get a Tuple4 and use map to convert it to a User. Map operates on the Valid result just like Option.
 
 >--
 
@@ -629,6 +682,8 @@ User.create(
 )
 ```
 
+Note: Successful validation, we get a valid user in case of success
+
 >--
 
 ```kotlin:ank
@@ -640,6 +695,39 @@ User.create(
 )
 ```
 
+Note: Unsuccessful validation, we get all error messages
+
+>--
+
+## Extracting the value
+
+```kotlin:ank
+val user = User.create(
+    email = "stolea@gmail.com",
+    firstName = "Stojan",
+    lastName = "Anastasov",
+    dob = "1991-10-10"
+)
+
+user.fold(
+    { e: Nel<String> -> TODO() },
+    { validUser: User -> validUser }
+)
+```
+
+Note: we can extract the value by providing two lamda functions, one for the invalid and one for the valid case.
+
+>--
+
+## Benefits of ValidationResult
+
+- It composes well
+- Good error messages
+- Developer friendly
+- Composition functions are written and tested
+
+Note: It composes well, we need to write a few lines of code but then it doesn't grow as the number of inputs grow. We get a value (error message) in case of invalid data, and we get all errors. In case of valid data we get the data transformed into our valid domain model. applicative takes care of composition.
+
 >--
 
 ## Learn more
@@ -647,6 +735,8 @@ User.create(
 arrow-kt.io
 
 Patterns -> Error Handling
+
+Note: An error handling tutorial that includes switching between Fail fast and accumulate error strategy by passing a parameter
 
 ---
 
@@ -660,17 +750,23 @@ How do things compose
 
 <img src="images/lego.jpg" alt="Lego block" />
 
+Note: Lego blocks are a good example of composition
+
 >--
 
 ## Lego combined
 
 <img src="images/lego-combined.jpeg" alt="Lego combined">
 
+Note: We can combine two lego blocks into something bigger. Then we can further compose this new shape further in the same way
+
 >--
 
 ## Lego Falcon
 
-<img src="images/lego-falcon.jpg" alt="Milenium Falcon Lego">
+<img src="images/lego-falcon.jpg" alt="Millennium Falcon Lego">
+
+Note: we can even build something as complex as the Millennium Falcon
 
 >--
 
@@ -691,6 +787,8 @@ fun validateUser(
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
+Note: If we have four functions that take an raw value and return a ValidationResult of some valid value. We can compose them into a function that takes four raw values and returns a ValidationResult of four valid things
+
 ---
 
 ## Summary
@@ -702,6 +800,8 @@ We can validate data using different technics
 - (A) -> ErrorMsg? <!-- .element: class="fragment" data-fragment-index="2" -->
 - (A) -> ValRes <!-- .element: class="fragment" data-fragment-index="3" -->
 - (A) -> Validated (arrow-kt) <!-- .element: class="fragment" data-fragment-index="4" -->
+
+Note: Booleans compose well, but have a problem with error messages. Unit + Exception doesn't compose well, we only get the first error. ErrorMsg is good in terms of composition and error messaging but can be error prone because we have to manually convert to the valid domain value. Our custom made Validation type works fine, but we need to write the functions to combine multiple Validation values ourselves. Finally we saw that arrow already has that datatype and the combinators for combining values. It has been used in production for a while and works.
 
 ---
 
