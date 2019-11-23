@@ -24,7 +24,7 @@ As developers we solve complex problems.
 
 ## Android Activity Lifecycle
 
-<img src="http://landenlabs.com/android/info/activity-life-cycle/activity-life-cycle-v2.png" alt="Android activity lifecycle" width="400px">
+<img src="images/lifecycle.png" alt="Android activity lifecycle" width="400px">
 
 >--
 
@@ -493,9 +493,9 @@ typealias Valid<A> = ValRes.Valid<A>
 typealias Invalid<E> = ValRes.Invalid<E>
 
 fun <E, A, B> tupled(
-            combine: (E, E) -> E,
             a: ValRes<E, A>,
-            b: ValRes<E, B>
+            b: ValRes<E, B>,
+            combine: (E, E) -> E
         ): ValRes<E, Pair<A, B>> =
             if (a is Valid && b is Valid) valid(Pair(a.a, b.a))
             else if (a is Invalid && b is Invalid) invalid(combine(a.e, b.e))
@@ -526,10 +526,9 @@ validateEmail("email")
 ```kotlin
 
 tupled(
-    {e1, e2 -> "$e1, $e2"},
     validateEmail("stojan"),    //invalid
     validateName(null)          //invalid
-)
+) { e1, e2 -> "$e1, $e2" }
 // Invalid(e=Email must contain @, found: 'stojan', Name must be between 1 and 50 chars, found: 'null')
 ```
 <!-- .element: class="fragment" data-fragment-index="2" -->
@@ -543,10 +542,10 @@ Note: Usage for valid, invalid and multiple failures
 data class Triple<A, B, C>(val a: A, val b: B, val c: C)
 
 fun <E, A, B, C> tupled(
-            combine: (E, E) -> E,
             a: ValRes<E, A>,
             b: ValRes<E, B>,
-            c: ValRes<E, C>
+            c: ValRes<E, C>,
+            combine: (E, E) -> E
         ): ValRes<E, Triple<A, B, C>> = TODO()
 ```
 
