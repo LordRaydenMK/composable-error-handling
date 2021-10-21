@@ -464,7 +464,7 @@ Note: The validation function for a single value looks similar
 typealias Valid<A> = ValRes.Valid<A>
 typealias Invalid<E> = ValRes.Invalid<E>
 
-fun <E, A, B> tupled(
+fun <E, A, B> zip(
             a: ValRes<E, A>,
             b: ValRes<E, B>,
             combine: (E, E) -> E
@@ -492,7 +492,7 @@ validateEmail("email")
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
 ```kotlin:ank
-tupled(
+zip(
     validateEmail("stojan"),    //invalid
     validateName(null)          //invalid
 ) { e1, e2 -> "$e1, $e2" }
@@ -504,9 +504,7 @@ Note: Usage for valid, invalid and multiple failures
 >--
 
 ```kotlin:ank
-data class Triple<A, B, C>(val a: A, val b: B, val c: C)
-
-fun <E, A, B, C> tupled(
+fun <E, A, B, C> zip(
             a: ValRes<E, A>,
             b: ValRes<E, B>,
             c: ValRes<E, C>,
@@ -590,18 +588,12 @@ Note: The validation functions are similar to what we saw before. Arrow comes wi
 >--
 
 ```kotlin:ank
-import arrow.core.extensions.nonemptylist.semigroup.semigroup
-import arrow.core.extensions.validated.applicative.applicative
-
 fun validateNameAndEmail(
     email: String?,
     firstName: String?
-): ValidationResult<Tuple2<Email, String50>> =
-    ValidationResult.applicative(Nel.semigroup<String>())
-        .tupled(
-            Email.create(email),       // ValidationResult<Email>
-            String50.create(firstName) // ValidationResult<String50>
-        ).fix()
+): ValidationResult<Pair<Email, String50>> =
+        Email.create(email)
+            .zip(String50.create(firstName), ::Pair)
 ```
 
 Note: Combining two values with ValidationResult. tupled combines two values that can potentially fail. Returns Invalid in case of failure or Valid if both succeed. Typle2 is just like Pair in Kotlin.
@@ -650,24 +642,19 @@ Note: Usage example with valid and invalid data. We get all error messages.
 >--
 
 ```kotlin:ank
-import arrow.core.extensions.nonemptylist.semigroup.semigroup
-import arrow.core.extensions.validated.applicative.applicative
-
 fun User.Companion.create(
     email: String?,
     firstName: String?,
     lastName: String?,
     dob: String?
 ): ValidationResult<User> =
-    ValidationResult.applicative(Nel.semigroup<String>())
-        .tupled(
-            Email.create(email),
+        Email.create(email).zip(
             String50.create(firstName),
             String50.create(lastName),
             validateDateOfBirth(dob)
-        )
-        .fix()  // Tuple4<Email, String50, String50, LocalDate>
-        .map { User(it.a, it.b, it.c, it.d) }
+        ) { email, fName, lName, dob -> 
+            User(email, fName, lName, dob) 
+        }
 ```
 
 Note: Validating a user. We get a Tuple4 and use map to convert it to a User. Map operates on the Valid result just like Option.

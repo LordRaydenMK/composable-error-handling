@@ -64,7 +64,6 @@ Note: The best way to validate email is by sending a confirmation link to the us
 ## The DTO
 
 ```kotlin
-
 data class UserDto(
     val email: String?,
     val firstName: String?,
@@ -83,19 +82,16 @@ Note: Everything is nullable. On FE the fields can be empty. On BE the client mi
 ## The Domain
 
 ```kotlin
-
 data class Email(val email: String) { companion object }
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
 ```kotlin
-
 data class String50(val value: String) { companion object }
 ```
 <!-- .element: class="fragment" data-fragment-index="2" -->
 
 ```kotlin
-
 import java.time.LocalDate
 
 data class User(
@@ -116,7 +112,6 @@ Note: We can easily combine 4 fields into a data class. We validate the data onc
 Email must contain @
 
 ```kotlin
-
 fun validateEmail(email: String?): Boolean =
     email != null && email.contains('@')
 ```
@@ -130,7 +125,6 @@ Note: Sub-problem #1
 First Name and Last Name can't be blank. Max length 50 (DB limit).
 
 ```kotlin
-
 fun validateName(name: String?): Boolean =
     !name.isNullOrBlank() && name.length < 50
 ```
@@ -144,7 +138,6 @@ Note: Sub-problem #2
 Date of Birth must be formatted as YYYY-MM-DD
 
 ```kotlin
-
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -164,7 +157,6 @@ Note: Sub-problem #3
 ## Validating User
 
 ```kotlin
-
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -186,7 +178,6 @@ Note: Combining the solutions of the sub-problems. We use an operator provided b
 ## Usage (A) -> Boolean
 
 ```kotlin
-
 validateUser("stojan", null, "", "August")
 // false
 ```
@@ -213,7 +204,6 @@ Note: Because we only get a Boolean, we don't have any info about the problem. W
 ## Exceptions
 
 ```kotlin
-
 fun validateEmailBool(email: String?): Boolean {
     require(email != null && email.contains('@'))
     { "Email must contain @, found: '$email'" }
@@ -232,7 +222,6 @@ Note: Exceptions have a message that we can use to display what the problem was.
 ## Return value is always true
 
 ```kotlin
-
 fun validateEmailUnit(email: String?): Unit =
     require(email != null && email.contains('@'))
     { "Email must contain @, found: '$email'" }
@@ -253,7 +242,6 @@ Note: Since the value is always true, we can return Unit instead
 ## Composing
 
 ```kotlin
-
 fun validateUserUnit(
     email: String?,
     firstName: String?,
@@ -274,12 +262,10 @@ Note: We can try to compose it by calling all four functions one by one
 ## Usage (A) -> Unit + Exception
 
 ```kotlin
-
 validateUserUnit("stolea@gmail.com", "Stojan", "An", "1995-10-10")
 ```
 
 ```kotlin
-
 val result = try {
     validateUserUnit("stojan", null, "", "August")
     "Valid"
@@ -300,7 +286,6 @@ Note: It works well in the happy path, but if there is an error we only get the 
 ## Accumulate errors
 
 ```kotlin
-
 fun validateUserAccumulateErrors(
     email: String?,
     firstName: String?,
@@ -342,12 +327,10 @@ Note: we can fix some of those problems
 ## Errors as values
 
 ```kotlin
-
 typealias ErrorMsg = String
 ```
 
 ```kotlin
-
 fun validateEmail(email: String?): ErrorMsg? =
     if (email != null && email.contains('@')) null
     else "Email must contain @, found: '$email'"
@@ -355,7 +338,6 @@ fun validateEmail(email: String?): ErrorMsg? =
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
 ```kotlin
-
 fun validateName(name: String?): ErrorMsg? =
     if (!name.isNullOrBlank() && name.length < 50) null
     else "Name must be between 1 and 50 chars, found: '$name'"
@@ -371,7 +353,6 @@ Note: ErrorMsg is just a convenient typealias for readability. When ErrorMsg is 
 ## Composing values
 
 ```kotlin
-
 fun validateUser(
     email: String?,
     firstName: String?,
@@ -406,7 +387,6 @@ Note: This composes well (little glue code), has proper error messages. Is it de
 ## Error prone
 
 ```kotlin
-
     val email: String? = "stolea@gmail.com"
     val emailErr: ErrorMsg? = validateEmail(email)
     if (emailErr == null) {
@@ -439,7 +419,6 @@ Note: Can we have our cake and eat it too. Let's try a different approach.
 ## ValRes
 
 ```kotlin
-
 sealed class ValRes<out E, out A> {
     data class Valid<A>(val a: A) : ValRes<Nothing, A>()
     data class Invalid<E>(val e: E) : ValRes<E, Nothing>()
@@ -447,7 +426,6 @@ sealed class ValRes<out E, out A> {
 ```
 
 ```kotlin
-
 fun <A> valid(a: A): ValRes<Nothing, A> = ValRes.Valid(a)
 
 fun <E> invalid(e: E): ValRes<E, Nothing> = ValRes.Invalid(e)
@@ -461,14 +439,12 @@ Note: Always return a value. With ValRes we return the error in case of failure 
 ## ValRes in the small
 
 ```kotlin
-
 fun validateEmail(email: String?): ValRes<String, Email> =
     if (email != null && email.contains('@')) valid(Email(email))
     else invalid("Email must contain @, found: '$email'")
 ```
 
 ```kotlin
-
 fun validateName(name: String?): ValRes<String, String50> =
     if (!name.isNullOrBlank() && name.length < 50) valid(String50(name))
     else invalid("Name must be between 1 and 50 chars, found: '$name'")
@@ -476,7 +452,6 @@ fun validateName(name: String?): ValRes<String, String50> =
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
 ```kotlin
-
 fun validateDateOfBirth(dob: String?): ValRes<String, LocalDate> = TODO()
 ```
 <!-- .element: class="fragment" data-fragment-index="2" -->
@@ -488,11 +463,10 @@ Note: The validation function for a single value looks similar
 ## Combining ValRes
 
 ```kotlin
-
 typealias Valid<A> = ValRes.Valid<A>
 typealias Invalid<E> = ValRes.Invalid<E>
 
-fun <E, A, B> tupled(
+fun <E, A, B> zip(
             a: ValRes<E, A>,
             b: ValRes<E, B>,
             combine: (E, E) -> E
@@ -511,21 +485,18 @@ Note: Composing two ValRes values. We need the two values and a function that co
 ## Usage
 
 ```kotlin
-
 validateEmail("stolea@gmail.com")
 // Valid(a=Email(email=stolea@gmail.com))
 ```
 
 ```kotlin
-
 validateEmail("email")
 // Invalid(e=Email must contain @, found: 'email')
 ```
 <!-- .element: class="fragment" data-fragment-index="1" -->
 
 ```kotlin
-
-tupled(
+zip(
     validateEmail("stojan"),    //invalid
     validateName(null)          //invalid
 ) { e1, e2 -> "$e1, $e2" }
@@ -538,10 +509,7 @@ Note: Usage for valid, invalid and multiple failures
 >--
 
 ```kotlin
-
-data class Triple<A, B, C>(val a: A, val b: B, val c: C)
-
-fun <E, A, B, C> tupled(
+fun <E, A, B, C> zip(
             a: ValRes<E, A>,
             b: ValRes<E, B>,
             c: ValRes<E, C>,
@@ -575,7 +543,6 @@ sealed class Validated<out E, out A> {
 ```
 
 ```kotlin
-
 import arrow.core.*
 
 typealias ValidatedNel<E, A> = Validated<Nel<E>, A>
@@ -589,12 +556,10 @@ Note: Arrow comes with a validation datatype called Validated<E, A>. Usually err
 ## ValidationResult
 
 ```kotlin
-
 typealias ValidationResult<A> = ValidatedNel<String, A>
 ```
 
 ```kotlin
-
 fun Email.Companion.create(email: String?): ValidationResult<Email> =
     if (email != null && email.contains('@')) Email(email).valid()
     else "Email must contain @, found: '$email'".invalidNel()
@@ -608,14 +573,12 @@ Note: In the examples I will just collect error messages as strings. In practice
 ## Validating in the small
 
 ```kotlin
-
 fun String50.Companion.create(name: String?): ValidationResult<String50> =
     if (!name.isNullOrBlank() && name.length < 50) String50(name).valid()
     else "Name must be between 1 and 50 chars, found: '$name'".invalidNel()
 ```
 
 ```kotlin
-
 fun validateDateOfBirth(dob: String?): ValidationResult<LocalDate> =
     try {
         LocalDate.parse(dob).valid()
@@ -630,19 +593,12 @@ Note: The validation functions are similar to what we saw before. Arrow comes wi
 >--
 
 ```kotlin
-
-import arrow.core.extensions.nonemptylist.semigroup.semigroup
-import arrow.core.extensions.validated.applicative.applicative
-
 fun validateNameAndEmail(
     email: String?,
     firstName: String?
-): ValidationResult<Tuple2<Email, String50>> =
-    ValidationResult.applicative(Nel.semigroup<String>())
-        .tupled(
-            Email.create(email),       // ValidationResult<Email>
-            String50.create(firstName) // ValidationResult<String50>
-        ).fix()
+): ValidationResult<Pair<Email, String50>> =
+        Email.create(email)
+            .zip(String50.create(firstName), ::Pair)
 ```
 
 Note: Combining two values with ValidationResult. tupled combines two values that can potentially fail. Returns Invalid in case of failure or Valid if both succeed. Typle2 is just like Pair in Kotlin.
@@ -664,7 +620,6 @@ Note: the function tupled is defined starting with 2 arguments up until X. Depen
 A semigroup for some given type A has a single operation (which we will call combine), which takes two values of type A, and returns a value of type A. This operation must be guaranteed to be associative.
 
 ```kotlin
-
 interface Semigroup<A> {
 
     fun combine(a: A, b: A): A
@@ -678,15 +633,13 @@ Note: If we have two Nel, we can combine them by adding the items. This is simil
 ## Validating name and email
 
 ```kotlin
-
 validateNameAndEmail("stolea@gmail.com", "Stojan")
-// Valid(a=Tuple2(a=Email(email=stolea@gmail.com), b=String50(value=Stojan)))
+// Validated.Valid((Email(email=stolea@gmail.com), String50(value=Stojan)))
 ```
 
 ```kotlin
-
 validateNameAndEmail("Not an email", "     ")
-// Invalid(e=NonEmptyList(all=[Email must contain @, found: 'Not an email', Name must be between 1 and 50 chars, found: '     ']))
+// Validated.Invalid(NonEmptyList(Email must contain @, found: 'Not an email', Name must be between 1 and 50 chars, found: '     '))
 ```
 
 <!-- .element: class="fragment" data-fragment-index="1" -->
@@ -696,25 +649,19 @@ Note: Usage example with valid and invalid data. We get all error messages.
 >--
 
 ```kotlin
-
-import arrow.core.extensions.nonemptylist.semigroup.semigroup
-import arrow.core.extensions.validated.applicative.applicative
-
 fun User.Companion.create(
     email: String?,
     firstName: String?,
     lastName: String?,
     dob: String?
 ): ValidationResult<User> =
-    ValidationResult.applicative(Nel.semigroup<String>())
-        .tupled(
-            Email.create(email),
+        Email.create(email).zip(
             String50.create(firstName),
             String50.create(lastName),
             validateDateOfBirth(dob)
-        )
-        .fix()  // Tuple4<Email, String50, String50, LocalDate>
-        .map { User(it.a, it.b, it.c, it.d) }
+        ) { email, fName, lName, dob -> 
+            User(email, fName, lName, dob) 
+        }
 ```
 
 Note: Validating a user. We get a Tuple4 and use map to convert it to a User. Map operates on the Valid result just like Option.
@@ -724,14 +671,13 @@ Note: Validating a user. We get a Tuple4 and use map to convert it to a User. Ma
 ## Create user (valid)
 
 ```kotlin
-
 User.create(
     email = "stolea@gmail.com",
     firstName = "Stojan",
     lastName = "Anastasov",
     dob = "1991-10-10"
 )
-// Valid(a=User(email=Email(email=stolea@gmail.com), firstName=String50(value=Stojan), lastName=String50(value=Anastasov), dateOfBirth=1991-10-10))
+// Validated.Valid(User(email=Email(email=stolea@gmail.com), firstName=String50(value=Stojan), lastName=String50(value=Anastasov), dateOfBirth=1991-10-10))
 ```
 
 Note: Successful validation, we get a valid user in case of success
@@ -741,14 +687,13 @@ Note: Successful validation, we get a valid user in case of success
 ## Create user (invalid)
 
 ```kotlin
-
 User.create(
     email = "",
     firstName = "   ",
     lastName = "a",
     dob = "10.10.1992"
 )
-// Invalid(e=NonEmptyList(all=[Date of Birth must be a valid date, found: '10.10.1992', Email must contain @, found: '', Name must be between 1 and 50 chars, found: '   ']))
+// Validated.Invalid(NonEmptyList(Email must contain @, found: '', Name must be between 1 and 50 chars, found: '   ', Date of Birth must be a valid date, found: '10.10.1992'))
 ```
 
 Note: Unsuccessful validation, we get all error messages
@@ -758,7 +703,6 @@ Note: Unsuccessful validation, we get all error messages
 ## Extracting the value
 
 ```kotlin
-
 val user = User.create(
     email = "stolea@gmail.com",
     firstName = "Stojan",
@@ -831,13 +775,11 @@ Note: we can even build something as complex as the Millennium Falcon
 ## Combining functions
 
 ```kotlin
-
 // (String?) -> ValidationResult<Email>
 fun validateEmail(email: String?): ValidationResult<Email> = TODO()
 ```
 
 ```kotlin
-
 // (String?, String?, String?, String?) -> ValidationResult<User>
 fun validateUser(
     email: String?,
